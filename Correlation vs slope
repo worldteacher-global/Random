@@ -1,0 +1,40 @@
+import numpy as np
+import pandas as pd
+import random
+
+data_dict = {'Variable_A':[random.random() for i in range(10)], 'Variable_B':[random.random() for i in range(10)]}
+data_df = pd.DataFrame.from_dict(data_dict)
+data_df.plot.scatter('Variable_A', 'Variable_B')
+
+from sklearn.preprocessing import StandardScaler
+scaler = StandardScaler()
+s_data = scaler.fit_transform(data_df)
+
+pd.DataFrame(s_data, columns=['Vaiable_A', 'Vaiable_B']).corr()
+
+data_df.corr()
+
+def linear_func(x,m,b):
+    return m * x + b
+    
+from scipy.optimize import curve_fit
+popt, pcov = curve_fit(linear_func, data_df.loc[:,'Variable_A'].values, data_df.loc[:,'Variable_B'].values )
+
+### Slope of line fit to unstandardized data
+popt[0]
+pcov
+
+from sklearn.preprocessing import StandardScaler
+import matplotlib.pyplot as plt
+
+scaler = StandardScaler()
+std_data = scaler.fit_transform(data_df)
+
+plt.plot(std_data[:,0], std_data[:,1], 'o')
+
+popt, pcov = curve_fit(linear_func, std_data[:,0], std_data[:,1] )
+
+### Solpe of line fit to standardized data
+popt[0]
+
+## Slope of the line fit to the standardized data matches exactly with the correlation coeffciant
