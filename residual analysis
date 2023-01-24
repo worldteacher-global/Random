@@ -1,0 +1,55 @@
+def calculate_residuals_analysis(df):
+
+    param_lst = []
+    y_predicted_lst = []
+    ri = []
+    hi = []
+
+    curve_id_lst = list(df.curve_id.unique())
+
+    for curve_lbl in tqdm(curve_id_lst):
+        temp_df = df[df.curve_id.eq(curve_lbl)]
+
+        y = temp_df['RESULT_NVAL'].values.astype(float)
+        x = temp_df['CONCENTRATION'].values.astype(float)
+
+        p0 = [np.min(y),100,np.median(x),1]
+
+        boundedby=[[-100,0.0000001,0.0000001,0],[20,150,50,150]]
+
+
+        try:
+            pp,pcov = curve_fit(fpl,x,y,p0,bounds=boundedby,maxfev=5000)
+            param_lst.append(pp)
+
+        except:
+            pp = np.array([0,0,1,0],dtype='float')
+            param_lst.append(pp)
+
+        y_hat = fpl(x,*pp)
+
+        y_predicted_lst.extend(y_hat)
+        
+        '''calculate the internally studentized residual''' 
+        
+        mu_X = np.mean(x)
+        n = len(x)
+        p = len(pp)
+        ei = y-y_hat 
+        MSE = np.sum([(r-np.mean(ei))**2 for r in ei])/(n-p)
+
+        hi.append((1/n) + ([(xi-mu_X)**2 for xi in x]/(np.sum([(xj-mu_X)**2 for xj in x]))))
+
+
+        hii = np.array(hi[0],dtype=float)
+
+        ri.extend(ei/np.sqrt((MSE * (1-hii))))
+
+    
+        
+    df.insert(24,'RESULT_NVAL_PREDICTED',y_predicted_lst)
+    
+    df['RESIDUAL'] = df['RESULT_NVAL'] - df['RESULT_NVAL_PREDICTED']  
+    df['INTERNALLY_STUDENTIZED_RESIDUAL'] = ri
+    
+    return df
